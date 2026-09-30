@@ -1,0 +1,3 @@
+[submodule "control"]
+	path = control
+	url = https://github.com/ami3go/ch9120-ethernet-relay-toolkit.git
