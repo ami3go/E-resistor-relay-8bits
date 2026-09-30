@@ -53,6 +53,35 @@ print(result.code, result.actual_ohm, result.error_percent)
 bank.safe_state_all()  # all coils off -> all cells inserted -> max resistance
 ```
 
+### Examples
+
+[`examples/`](examples) has runnable, self-contained scripts, from simulated (no hardware needed) to real hardware:
+
+| Script | What it shows | Needs real hardware? |
+|---|---|---|
+| [`01_single_channel.py`](examples/01_single_channel.py) | Set one channel to a few target resistances, read back state, safe state | No |
+| [`02_multi_channel_bank.py`](examples/02_multi_channel_bank.py) | Drive several channels through one `EResistorBank` (the same pattern scales to 128) | No |
+| [`03_calibration_workflow.py`](examples/03_calibration_workflow.py) | Apply measured calibration, save it, reload it as if on a different PC | No |
+| [`04_real_hardware_ch9120.py`](examples/04_real_hardware_ch9120.py) | Set a real board's resistance over the network, then return it to safe state | **Yes** |
+
+Run any of the simulated ones directly:
+
+```bash
+pip install -e .
+python examples/01_single_channel.py
+python examples/02_multi_channel_bank.py
+python examples/03_calibration_workflow.py
+```
+
+For the real-hardware example, also install the control submodule and pass the board's IP and a target resistance in ohms:
+
+```bash
+pip install -e ./control
+python examples/04_real_hardware_ch9120.py 192.168.0.211 15000
+```
+
+This will actually energize relays on that board — disconnect anything sensitive first.
+
 ### Calibration
 
 Nominal resistances are computed from 1% resistor values; real boards should be calibrated by measuring the base network and each of the 8 cells. Calibration is keyed by **(IP address, channel id)**, not just channel id, so swapping which board sits at a given channel — or moving a board to a new IP — can't silently apply the wrong calibration:
