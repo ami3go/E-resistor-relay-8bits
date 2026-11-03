@@ -27,8 +27,23 @@ bash "$ROOT_DIR/hil/preflight.sh"
 
 echo
 echo "=== Gate 2: full calibration + 190-code verification ==="
-"$PYTHON_BIN" -m resistor_matrix_calibrator.cli   --board "$ERESISTOR_BOARD"   --visa "$ERESISTOR_VISA"   --serial "$ERESISTOR_SERIAL"   --operator "$ERESISTOR_OPERATOR"   --output "$ERESISTOR_CAL_OUTPUT"   --interlock-delay "$ERESISTOR_INTERLOCK_S"   --points 190   --min-ohm 300   --max-ohm 400500
+CAL_ARGS=(
+  --board "$ERESISTOR_BOARD"
+  --visa "$ERESISTOR_VISA"
+  --serial "$ERESISTOR_SERIAL"
+  --operator "$ERESISTOR_OPERATOR"
+  --output "$ERESISTOR_CAL_OUTPUT"
+  --interlock-delay "$ERESISTOR_INTERLOCK_S"
+  --points 190
+  --min-ohm 300
+  --max-ohm 400500
+)
+"$PYTHON_BIN" -m resistor_matrix_calibrator.cli "${CAL_ARGS[@]}"
 
 echo
-echo "Full HIL calibration completed."
-echo "Review relay_driver_calibration.json, verification CSV, plots and PDF report before release."
+echo "=== Gate 3: artifact/release validation ==="
+"$PYTHON_BIN" -m resistor_matrix_calibrator.hil_validate   --output-base "$ERESISTOR_CAL_OUTPUT"   --serial "$ERESISTOR_SERIAL"   --channel 1   --expected-cells 8   --expected-points 190
+
+echo
+echo "HIL QUALIFICATION: PASS"
+echo "Preflight passed, calibration completed, and the 190-point release gate passed."
