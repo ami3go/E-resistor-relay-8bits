@@ -174,6 +174,29 @@ The current GUI exposes eight logical calibration channels, so one GUI run can
 calibrate up to eight relay boards. The Python relay bank itself remains
 capable of more channels.
 
+The same workflow is available directly from a Linux terminal. Once the
+calibration-tool package is installed in the same Python environment, run from
+this relay repository:
+
+```bash
+python3 scripts/calibrate_linux.py --list-visa
+
+python3 scripts/calibrate_linux.py \
+  --check \
+  --board 192.168.0.211 \
+  --visa 'USB0::0x03EB::0x2065::HEWLETT-PACKARD_34401A_0_11-5-2::INSTR'
+
+python3 scripts/calibrate_linux.py \
+  --board 192.168.0.211 \
+  --visa 'USB0::0x03EB::0x2065::HEWLETT-PACKARD_34401A_0_11-5-2::INSTR' \
+  --serial RELAY-001 \
+  --operator "$USER"
+```
+
+The installed calibration package also exposes the executable
+`e-resistor-calibrate`. Both entry points use the same headless
+`CalibrationWorker` as the GUI.
+
 ### Tests
 
 ```bash
