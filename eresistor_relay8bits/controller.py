@@ -24,7 +24,9 @@ class EResistorBank:
         if not 1 <= max_channels <= MAX_CHANNELS:
             raise ValueError(f"max_channels must be 1..{MAX_CHANNELS}")
 
-        self.calibration_store = calibration_store or CalibrationStore()
+        self.calibration_store = (
+            CalibrationStore() if calibration_store is None else calibration_store
+        )
         self.max_channels = max_channels
         self._channels: Dict[int, EResistorChannel] = {}
 
