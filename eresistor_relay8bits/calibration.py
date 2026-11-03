@@ -6,17 +6,25 @@ alone: swapping which board sits at a given channel_id, or moving a board to
 a new IP, should not silently apply the wrong calibration.
 
 The store is backed by a single plain-JSON file so it is human-readable,
-diffable, and trivially movable between PCs (copy the file, or commit it).
+diffable, and trivially movable between PCs.
 """
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from math import isfinite
 from pathlib import Path
 from typing import Dict, Iterator, Optional, Tuple, Union
 
 from .constants import BASE_RESISTANCE_OHM, BITS_PER_CHANNEL, CELL_WEIGHTS_OHM
+
+
+def _positive_finite(value: float, name: str) -> float:
+    value = float(value)
+    if not isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be a finite value greater than zero")
+    return value
 
 
 @dataclass(frozen=True)
@@ -26,8 +34,19 @@ class CalibrationRecord:
     note: str = ""
 
     def __post_init__(self) -> None:
-        if len(self.cell_ohm) != BITS_PER_CHANNEL:
+        cells = tuple(self.cell_ohm)
+        if len(cells) != BITS_PER_CHANNEL:
             raise ValueError(f"cell_ohm must have {BITS_PER_CHANNEL} values")
+        object.__setattr__(self, "base_ohm", _positive_finite(self.base_ohm, "base_ohm"))
+        object.__setattr__(
+            self,
+            "cell_ohm",
+            tuple(
+                _positive_finite(value, f"cell_ohm[{index}]")
+                for index, value in enumerate(cells)
+            ),
+        )
+        object.__setattr__(self, "note", str(self.note))
 
     def to_dict(self) -> dict:
         return {
@@ -46,7 +65,11 @@ class CalibrationRecord:
 
 
 def _key(ip: str, channel_id: int) -> Tuple[str, int]:
-    return (ip, int(channel_id))
+    if not isinstance(ip, str) or not ip.strip():
+        raise ValueError("ip must be a non-empty string")
+    if isinstance(channel_id, bool) or not isinstance(channel_id, int):
+        raise TypeError("channel_id must be an integer")
+    return (ip.strip(), channel_id)
 
 
 class CalibrationStore:
@@ -59,6 +82,8 @@ class CalibrationStore:
         return self._records.get(_key(ip, channel_id))
 
     def set(self, ip: str, channel_id: int, record: CalibrationRecord) -> None:
+        if not isinstance(record, CalibrationRecord):
+            raise TypeError("record must be a CalibrationRecord")
         self._records[_key(ip, channel_id)] = record
 
     def remove(self, ip: str, channel_id: int) -> None:
@@ -79,18 +104,29 @@ class CalibrationStore:
 
     @classmethod
     def from_dict(cls, data: dict) -> "CalibrationStore":
+        if not isinstance(data, dict):
+            raise ValueError("calibration root must be a JSON object")
         store = cls()
         for ip, channels in data.items():
+            if not isinstance(channels, dict):
+                raise ValueError(f"calibration entry for {ip!r} must be an object")
             for channel_id, record in channels.items():
+                if not isinstance(record, dict):
+                    raise ValueError(
+                        f"calibration record for {ip!r}/{channel_id!r} must be an object"
+                    )
                 store.set(ip, int(channel_id), CalibrationRecord.from_dict(record))
         return store
 
     def save(self, path: Union[str, Path]) -> None:
-        Path(path).write_text(json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n")
+        Path(path).write_text(
+            json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
     @classmethod
     def load(cls, path: Union[str, Path]) -> "CalibrationStore":
-        text = Path(path).read_text()
+        text = Path(path).read_text(encoding="utf-8")
         return cls.from_dict(json.loads(text) if text.strip() else {})
 
     @classmethod

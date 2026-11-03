@@ -6,7 +6,7 @@ The board is built around the common **YHQ001 eight-channel Ethernet relay board
 
 ## Control software
 
-Control software is not duplicated here — it's included as the [`control/`](control) submodule, pointing at [ch9120-ethernet-relay-toolkit](https://github.com/ami3go/ch9120-ethernet-relay-toolkit), which provides:
+Control software is not duplicated here — it's included as the [control/](control) submodule, pointing at [ch9120-ethernet-relay-toolkit](https://github.com/ami3go/ch9120-ethernet-relay-toolkit), which provides:
 
 - CH9120 discovery over UDP ports 50000/60000.
 - Read, back up, modify, write, and verify the CH9120 configuration.
@@ -29,7 +29,7 @@ See [control/README.md](control/README.md) for full relay-control usage instruct
 
 ## Resistance driver
 
-[`eresistor_relay8bits/`](eresistor_relay8bits) is the Python driver for the board's resistance behavior, implementing [`E_Resistor_8Relay_Driver_Spec.md`](E_Resistor_8Relay_Driver_Spec.md). It is independent of the relay transport: the resistance model, code<->coil-mask inversion, and channel/bank logic don't know or care how a coil mask actually reaches a board.
+[eresistor_relay8bits/](eresistor_relay8bits) is the Python driver for the board's resistance behavior, implementing [E_Resistor_8Relay_Driver_Spec.md](E_Resistor_8Relay_Driver_Spec.md). It is independent of the relay transport: the resistance model, code<->coil-mask inversion, and channel/bank logic don't know or care how a coil mask actually reaches a board.
 
 One board's 8 relays realize **one channel** (one programmable resistor). A bank can hold up to **128 channels** — i.e. up to 128 boards, each on its own IP.
 
@@ -39,32 +39,52 @@ pip install -e ./control  # only needed for Ch9120RelayTransport
 ```
 
 ```python
-from eresistor_relay8bits import CalibrationStore, EResistorBank
+from eresistor_relay8bits import EResistorBank
 from eresistor_relay8bits.ch9120_transport import Ch9120RelayTransport
 
-bank = EResistorBank.load_calibration("calibration.json")  # empty store if file doesn't exist yet
+bank = EResistorBank.load_calibration("calibration.json")
 
 bank.add_channel(0, ip="192.168.0.211", transport=Ch9120RelayTransport("192.168.0.211"))
 bank.add_channel(1, ip="192.168.0.212", transport=Ch9120RelayTransport("192.168.0.212"))
 
-result = bank[0].set_resistance(15_000)  # ohms
+result = bank[0].set_resistance(15_000)
 print(result.code, result.actual_ohm, result.error_percent)
 
-bank.safe_state_all()  # all coils off -> all cells inserted -> max resistance
+bank.safe_state_all()
 ```
+
+### Relay transition safety
+
+The real CH9120 transport defaults to a **break-before-make style** update:
+
+1. send **all coils OFF**,
+2. optionally wait an interlock delay,
+3. energize only the bypass relays required by the target mask.
+
+For this resistor topology, all coils OFF means **all resistor cells inserted**, which is the maximum-resistance state. A transition therefore approaches the requested resistance from above instead of briefly creating an unintended lower resistance.
+
+```python
+transport = Ch9120RelayTransport(
+    "192.168.0.211",
+    break_before_make=True,
+    interlock_delay_s=0.02,  # optional; set from measured relay timing
+)
+```
+
+The default delay is `0.0` seconds because the correct physical relay release/operate timing must be established on the actual board. Use a measured delay for hardware qualification. Setting `break_before_make=False` restores direct per-relay updates and is not recommended for normal resistor switching.
 
 ### Examples
 
-[`examples/`](examples) has runnable, self-contained scripts, from simulated (no hardware needed) to real hardware:
+[examples/](examples) has runnable, self-contained scripts, from simulated (no hardware needed) to real hardware:
 
 | Script | What it shows | Needs real hardware? |
 |---|---|---|
-| [`01_single_channel.py`](examples/01_single_channel.py) | Set one channel to a few target resistances, read back state, safe state | No |
-| [`02_multi_channel_bank.py`](examples/02_multi_channel_bank.py) | Drive several channels through one `EResistorBank` (the same pattern scales to 128) | No |
-| [`03_calibration_workflow.py`](examples/03_calibration_workflow.py) | Apply measured calibration, save it, reload it as if on a different PC | No |
-| [`04_real_hardware_ch9120.py`](examples/04_real_hardware_ch9120.py) | Set a real board's resistance over the network, then return it to safe state | **Yes** |
+| [01_single_channel.py](examples/01_single_channel.py) | Set one channel to a few target resistances, read back state, safe state | No |
+| [02_multi_channel_bank.py](examples/02_multi_channel_bank.py) | Drive several channels through one `EResistorBank` | No |
+| [03_calibration_workflow.py](examples/03_calibration_workflow.py) | Apply measured calibration, save it, reload it on another PC | No |
+| [04_real_hardware_ch9120.py](examples/04_real_hardware_ch9120.py) | Set a real board's resistance over the network, then return it to safe state | **Yes** |
 
-Run any of the simulated ones directly:
+Run the simulated examples:
 
 ```bash
 pip install -e .
@@ -73,7 +93,7 @@ python examples/02_multi_channel_bank.py
 python examples/03_calibration_workflow.py
 ```
 
-For the real-hardware example, also install the control submodule and pass the board's IP and a target resistance in ohms:
+For real hardware:
 
 ```bash
 pip install -e ./control
@@ -84,7 +104,7 @@ This will actually energize relays on that board — disconnect anything sensiti
 
 ### Calibration
 
-Nominal resistances are computed from 1% resistor values; real boards should be calibrated by measuring the base network and each of the 8 cells. Calibration is keyed by **(IP address, channel id)**, not just channel id, so swapping which board sits at a given channel — or moving a board to a new IP — can't silently apply the wrong calibration:
+Nominal resistances are computed from 1% resistor values; real boards should be calibrated by measuring the base network and each of the 8 cells. Calibration is keyed by **(IP address, channel id)**, not just channel id.
 
 ```python
 from eresistor_relay8bits import CalibrationRecord
@@ -97,10 +117,12 @@ bank[0].apply_calibration(CalibrationRecord(
 bank.save_calibration("calibration.json")
 ```
 
-`calibration.json` is a single plain-JSON file (see [`calibration.example.json`](calibration.example.json)) — copy it to another PC, or commit it, and `EResistorBank.load_calibration(path)` resolves each channel's calibration by its (ip, channel_id) regardless of which machine loads it.
+`calibration.json` is a plain JSON file (see [calibration.example.json](calibration.example.json)). The driver resolves each channel's calibration by its `(ip, channel_id)` identity.
 
 ### Tests
 
 ```bash
-python -m unittest discover
+python -m unittest discover -s tests -t . -v
 ```
+
+GitHub Actions runs the same test suite on Python 3.10, 3.11, 3.12 and 3.13.
