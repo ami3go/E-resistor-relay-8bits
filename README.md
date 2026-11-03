@@ -202,9 +202,13 @@ The installed calibration package also exposes the executable
 A bench-ready HIL package is included under [hil/](hil) with a complete
 runbook in [HIL_TEST_PLAN.md](HIL_TEST_PLAN.md).
 
-First create a local bench configuration:
+Prepare the Linux environment and local bench configuration:
 
 ```bash
+git submodule update --init --recursive
+bash hil/setup_linux.sh
+source .venv/bin/activate
+
 cp hil/bench.env.example hil/bench.env
 nano hil/bench.env
 ```
