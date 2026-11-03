@@ -108,6 +108,11 @@ class Ch9120RelayTransport:
         # The YHQ001 command profile has no relay-state query/readback.
         return None
 
+    def close(self) -> None:
+        """Close the underlying relay client's socket without changing calibration data."""
+        self.client.close()
+        self._last_commanded_mask = None
+
     def all_coils_off(self) -> None:
         self.client.all_off()
         self._last_commanded_mask = 0x00
