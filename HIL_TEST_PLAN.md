@@ -77,32 +77,38 @@ The HIL code currently lives in the two companion PR branches:
 - `ami3go/E-resistor-matrix-calibration-tool` PR #1 —
   `relay-8bit-series-integration`
 
-Create a clean virtual environment:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-```
-
-Install the relay project and CH9120 control submodule:
+Recommended Linux setup (assuming both repositories are sibling folders):
 
 ```bash
 cd E-resistor-relay-8bits
 git switch calibration-gui-integration
 git submodule update --init --recursive
-python -m pip install -e .
-python -m pip install -e ./control
-```
 
-Install the calibration tool:
-
-```bash
 cd ../E-resistor-matrix-calibration-tool
 git switch relay-8bit-series-integration
-cd dev/resistor_matrix_calibrator_gui
-python -m pip install -e .
+
+cd ../E-resistor-relay-8bits
+bash hil/setup_linux.sh
+source .venv/bin/activate
 ```
+
+The setup helper creates the virtual environment and installs:
+
+- the relay driver,
+- the CH9120 `control/` submodule,
+- the calibration package,
+- `pyvisa-py`,
+- `pyusb`.
+
+If the calibration repository is not a sibling directory:
+
+```bash
+CALIBRATION_REPO=/path/to/E-resistor-matrix-calibration-tool bash hil/setup_linux.sh
+source .venv/bin/activate
+```
+
+Manual installation remains possible, but the setup helper is preferred for a
+repeatable HIL bench.
 
 Confirm the commands exist:
 
