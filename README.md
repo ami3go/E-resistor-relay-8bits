@@ -197,6 +197,47 @@ The installed calibration package also exposes the executable
 `e-resistor-calibrate`. Both entry points use the same headless
 `CalibrationWorker` as the GUI.
 
+### HIL qualification
+
+A bench-ready HIL package is included under [hil/](hil) with a complete
+runbook in [HIL_TEST_PLAN.md](HIL_TEST_PLAN.md).
+
+First create a local bench configuration:
+
+```bash
+cp hil/bench.env.example hil/bench.env
+nano hil/bench.env
+```
+
+Then run the electrical preflight:
+
+```bash
+bash hil/preflight.sh
+```
+
+The preflight checks:
+
+- physical all-coils-OFF safe state,
+- base-only code `0x00`,
+- B0...B7 one at a time,
+- derived individual cell values,
+- application maximum code `0xBD`,
+- final return to physical safe state,
+- HIL JSON/CSV evidence.
+
+After it passes, run the gated full HIL calibration:
+
+```bash
+bash hil/run_full.sh
+```
+
+The full script re-runs preflight first and only then starts the complete
+base + 8-cell calibration and all **190 application-code verification points**.
+
+Use [hil/HIL_RESULT_TEMPLATE.md](hil/HIL_RESULT_TEMPLATE.md) for the final
+board qualification record. The first HIL should be performed with the DUT
+disconnected and the 34401A connected directly across the E-Resistor output.
+
 ### Tests
 
 ```bash
