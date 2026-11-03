@@ -122,7 +122,7 @@ bank.save_calibration("calibration.json")
 ### Tests
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -t . -v
 ```
 
 GitHub Actions runs the same test suite on Python 3.10, 3.11, 3.12 and 3.13.
