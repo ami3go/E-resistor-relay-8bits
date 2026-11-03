@@ -119,6 +119,129 @@ bank.save_calibration("calibration.json")
 
 `calibration.json` is a plain JSON file (see [calibration.example.json](calibration.example.json)). The driver resolves each channel's calibration by its `(ip, channel_id)` identity.
 
+### Existing calibration GUI integration
+
+This relay driver can be used directly by the existing
+`ami3go/E-resistor-matrix-calibration-tool` PySide6 calibration GUI. The GUI
+branch/profile for this board uses the custom switching factory:
+
+```text
+eresistor_relay8bits.calibration_adapter:create_switching_adapter
+```
+
+The relay topology is **series binary with an always-present base resistor**.
+Calibration therefore differs from the original parallel MOSFET matrix:
+
+1. set logical code `0` and measure the base resistance;
+2. set each single-bit code and measure `base + cell`;
+3. derive each calibrated cell weight as `measured_total - measured_base`;
+4. verify combinations with `R = base + sum(selected cells)`;
+5. for the normal 300 Ω…400 kΩ profile, verify all **190 application codes
+   0…189**.
+
+The calibration GUI writes `relay_driver_calibration.json` in the native
+`CalibrationStore` format used by this package. It can be loaded without any
+conversion:
+
+```python
+from eresistor_relay8bits import EResistorBank
+
+bank = EResistorBank.load_calibration(
+    "calibration_output/<serial>/runs/<timestamp>/relay_driver_calibration.json"
+)
+```
+
+Typical setup:
+
+```bash
+# Relay repository
+git clone --recurse-submodules https://github.com/ami3go/E-resistor-relay-8bits.git
+cd E-resistor-relay-8bits
+python -m pip install -e .
+python -m pip install -e ./control
+
+# In the calibration-tool repository:
+cd dev/resistor_matrix_calibrator_gui
+python -m pip install -e .
+resistor-matrix-calibrator
+```
+
+Load the profile `profiles/e_resistor_relay_8bits.json`, then set the real
+relay-board IP address(es) and the HP/Keysight 34401A VISA resource before
+running real hardware calibration.
+
+The current GUI exposes eight logical calibration channels, so one GUI run can
+calibrate up to eight relay boards. The Python relay bank itself remains
+capable of more channels.
+
+The same workflow is available directly from a Linux terminal. Once the
+calibration-tool package is installed in the same Python environment, run from
+this relay repository:
+
+```bash
+python3 scripts/calibrate_linux.py --list-visa
+
+python3 scripts/calibrate_linux.py \
+  --check \
+  --board 192.168.0.211 \
+  --visa 'USB0::0x03EB::0x2065::HEWLETT-PACKARD_34401A_0_11-5-2::INSTR'
+
+python3 scripts/calibrate_linux.py \
+  --board 192.168.0.211 \
+  --visa 'USB0::0x03EB::0x2065::HEWLETT-PACKARD_34401A_0_11-5-2::INSTR' \
+  --serial RELAY-001 \
+  --operator "$USER"
+```
+
+The installed calibration package also exposes the executable
+`e-resistor-calibrate`. Both entry points use the same headless
+`CalibrationWorker` as the GUI.
+
+### HIL qualification
+
+A bench-ready HIL package is included under [hil/](hil) with a complete
+runbook in [HIL_TEST_PLAN.md](HIL_TEST_PLAN.md).
+
+Prepare the Linux environment and local bench configuration:
+
+```bash
+git submodule update --init --recursive
+bash hil/setup_linux.sh
+source .venv/bin/activate
+
+cp hil/bench.env.example hil/bench.env
+nano hil/bench.env
+```
+
+Then run the electrical preflight:
+
+```bash
+bash hil/preflight.sh
+```
+
+The preflight checks:
+
+- physical all-coils-OFF safe state,
+- base-only code `0x00`,
+- B0...B7 one at a time,
+- derived individual cell values,
+- application maximum code `0xBD`,
+- final return to physical safe state,
+- HIL JSON/CSV evidence.
+
+After it passes, run the gated full HIL calibration:
+
+```bash
+bash hil/run_full.sh
+```
+
+The full script re-runs preflight first and only then starts the complete
+base + 8-cell calibration and all **190 application-code verification points**.
+
+Use [hil/HIL_RESULT_TEMPLATE.md](hil/HIL_RESULT_TEMPLATE.md) for the final
+board qualification record. The first HIL should be performed with the DUT
+disconnected and the 34401A connected directly across the E-Resistor output.
+
 ### Tests
 
 ```bash
