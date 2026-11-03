@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Optional, Sequence
 
-from .bit_mapping import code_to_coil_mask
+from .bit_mapping import code_to_coil_mask, validate_bit_to_relay
 from .calibration import CalibrationRecord, CalibrationStore
-from .constants import DEFAULT_BIT_TO_RELAY, SAFE_COIL_MASK, SAFE_LOGICAL_CODE
+from .constants import (
+    DEFAULT_BIT_TO_RELAY,
+    MAX_CHANNELS,
+    SAFE_COIL_MASK,
+    SAFE_LOGICAL_CODE,
+)
 from .resistance_model import ResistanceModel
 from .transport import RelayTransport
 
@@ -36,11 +42,18 @@ class EResistorChannel:
         calibration_store: Optional[CalibrationStore] = None,
         bit_to_relay: Sequence[int] = DEFAULT_BIT_TO_RELAY,
     ) -> None:
-        self.ip = ip
+        if not isinstance(ip, str) or not ip.strip():
+            raise ValueError("ip must be a non-empty string")
+        if isinstance(channel_id, bool) or not isinstance(channel_id, int):
+            raise TypeError("channel_id must be an integer")
+        if not 0 <= channel_id < MAX_CHANNELS:
+            raise ValueError(f"channel_id must be 0..{MAX_CHANNELS - 1}")
+
+        self.ip = ip.strip()
         self.channel_id = channel_id
         self.transport = transport
         self.calibration_store = calibration_store
-        self.bit_to_relay = tuple(bit_to_relay)
+        self.bit_to_relay = validate_bit_to_relay(bit_to_relay)
         self.model = self._build_model()
         self._current_code: Optional[int] = None
 
@@ -53,11 +66,9 @@ class EResistorChannel:
         return ResistanceModel(base_ohm=record.base_ohm, weights_ohm=record.cell_ohm)
 
     def apply_calibration(self, record: CalibrationRecord) -> None:
-        """Rebuild the resistance model from `record` and persist it.
-
-        Persisting writes into the shared CalibrationStore only (call
-        `store.save(path)` separately to write it to disk).
-        """
+        """Rebuild the resistance model from record and persist it in memory."""
+        if not isinstance(record, CalibrationRecord):
+            raise TypeError("record must be a CalibrationRecord")
         if self.calibration_store is not None:
             self.calibration_store.set(self.ip, self.channel_id, record)
         self.model = ResistanceModel(base_ohm=record.base_ohm, weights_ohm=record.cell_ohm)
@@ -70,13 +81,20 @@ class EResistorChannel:
         self._current_code = code
 
     def set_resistance(self, target_ohm: float) -> SetResistanceResult:
-        code = self.model.nearest_code(target_ohm)
+        target = float(target_ohm)
+        if not isfinite(target):
+            raise ValueError("target_ohm must be finite")
+
+        code = self.model.nearest_code(target)
         self.set_code(code)
         actual = self.model.calibrated_resistance(code)
-        error = actual - target_ohm
-        error_percent = (error / actual * 100.0) if actual else 0.0
+        error = actual - target
+        # Report relative error against the requested value. For an explicit
+        # zero-ohm request percentage error is undefined, so report 0.0 while
+        # still returning the absolute error and clamping to the minimum code.
+        error_percent = (error / target * 100.0) if target != 0.0 else 0.0
         return SetResistanceResult(
-            requested_ohm=target_ohm,
+            requested_ohm=target,
             code=code,
             actual_ohm=actual,
             error_ohm=error,
