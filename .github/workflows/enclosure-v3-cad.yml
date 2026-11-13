@@ -31,54 +31,54 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install cadquery trimesh numpy pillow
 
-      - name: Generate two frame STEP/STL files and assembly STEP models
+      - name: Export SINGLE universal frame STL, STEP and repeated assemblies
         run: python enclosure/V3/create_v3.py
 
-      - name: Test nominal PCB and intermodule interference both directions
+      - name: Test short and tall snap orientations and PCB interference
         run: python enclosure/V3/test_fit.py
 
-      - name: Render CAD-accurate reference views
+      - name: Render actual CAD geometry and reference boards
         run: python enclosure/V3/render_v3.py
 
-      - name: Assert complete deliverables
+      - name: Check outputs and single-production-variant requirement
         run: |
           python - <<'PY'
           from pathlib import Path
           import json
-          root=Path("enclosure/V3")
-          outputs=(
-            "resistor_frame.stl","resistor_frame.step",
-            "relay_frame.stl","relay_frame.step",
-            "module_assembly.step","two_modules.step","exploded_assembly.step",
-            "exploded_v3.png","assembled_v3.png","stacked_v3.png",
-            "verification.json","fit_check.json",
-          )
-          for name in outputs:
-              p=root/name
-              assert p.is_file() and p.stat().st_size>100, f"Missing CAD artifact: {p}"
-          report=json.loads((root/"verification.json").read_text())
-          fit=json.loads((root/"fit_check.json").read_text())
-          assert report["printed_parts_per_module"] == 2
-          assert report["required_screws_per_module"] == 0
-          assert 5<=report["nominal_resistor_to_relay_gap_mm"]<=10
-          assert all(abs(value)<.0001 for value in fit["zero_nominal_solid_interference_mm3"].values())
-          for part in ("resistor_frame","relay_frame"):
-              d=report[part]
-              assert d["solid_valid"] and d["solids"]==1 and d["watertight"] and d["meshes"]==1
-          print("All V3 CAD exports, mesh and fit checks passed.")
+          root=Path('enclosure/V3')
+          expected=('universal_frame.step','universal_frame.stl','module_assembly.step',
+                    'two_modules.step','exploded_assembly.step','verification.json',
+                    'fit_check.json','assembled_v3.png','exploded_v3.png','stacked_v3.png')
+          for p in expected:
+              f=root/p
+              assert f.is_file() and f.stat().st_size>100, f
+          data=json.loads((root/'verification.json').read_text())
+          fit=json.loads((root/'fit_check.json').read_text())
+          assert data['variant_count']==1
+          assert data['printed_parts_per_complete_electrical_module']==2
+          assert data['brep_valid'] and data['brep_solids']==1
+          assert data['stl_watertight'] and data['stl_components']==1
+          assert abs(data['resistor_to_relay_nominal_clearance_mm']-8.0)<.001
+          assert fit['zero_intersections']
+          assert fit['universal_frame_variant_count']==1
+          assert list(root.glob('*.stl'))==[root/'universal_frame.stl'], 'Obsolete printable variant still present'
+          print('Single universal V3 frame and both stacking positions validated')
           PY
 
-      - name: Commit binary exports and rendered views to main
+      - name: Commit exported V3 models and views
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f enclosure/V3/*.stl enclosure/V3/*.step \
-            enclosure/V3/*.png enclosure/V3/verification.json \
+          git add -f enclosure/V3/universal_frame.stl enclosure/V3/universal_frame.step \
+            enclosure/V3/module_assembly.step enclosure/V3/two_modules.step \
+            enclosure/V3/exploded_assembly.step \
+            enclosure/V3/assembled_v3.png enclosure/V3/exploded_v3.png \
+            enclosure/V3/stacked_v3.png enclosure/V3/verification.json \
             enclosure/V3/fit_check.json
           if git diff --cached --quiet; then
-            echo "V3 CAD exports unchanged"
+            echo 'V3 CAD outputs unchanged'
           else
-            git commit -m "Generate verified enclosure V3 STEP STL and exploded views"
+            git commit -m "Export V3 single universal stackable PCB frame and assembly views"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
