@@ -1,0 +1,73 @@
+name: Build V5 compact 5mm-20mm PCB shelf rack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "enclosure/V5/create_v5.py"
+      - "enclosure/V5/test_fit.py"
+      - "enclosure/V5/render_v5.py"
+      - ".github/workflows/enclosure-v5-cad.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export-and-validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install CadQuery and rendering dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-dejavu-core
+          python -m pip install --upgrade pip
+          python -m pip install cadquery trimesh numpy pillow
+      - name: Generate STEP, STL and full 5-pair rack assembly
+        run: python enclosure/V5/create_v5.py
+      - name: Validate 5/20 mm bare-PCB gaps and chassis stacking
+        run: python enclosure/V5/test_fit.py
+      - name: Render exact CAD and exploded views
+        run: python enclosure/V5/render_v5.py
+      - name: Verify saved artifacts and physical-fit warning
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("enclosure/V5")
+          for name in ("shelf_unit.stl","shelf_unit.step","five_pair_rack.step",
+                       "one_pair_reference.step","exploded_pair_reference.step",
+                       "rack_v5.png","pair_v5.png","exploded_v5.png",
+                       "verification.json","fit_check.json"):
+              f=p/name
+              assert f.is_file() and f.stat().st_size>100, name
+          geom=json.loads((p/"verification.json").read_text())
+          chk=json.loads((p/"fit_check.json").read_text())
+          assert geom["BRep_valid"] and geom["STL_watertight"]
+          assert geom["BRep_solids"]==geom["STL_connected_parts"]==1
+          assert geom["print_quantity"]==5
+          assert geom["assembled_five_unit_height_mm"]==146.1
+          assert chk["PCB_face_to_face_gaps_mm"]=={"resistor_to_relay":5.0,"relay_to_next_resistor":20.0}
+          assert all(abs(n)<0.0001 for n in chk["nominal_solid_intersection_volume_mm3"].values())
+          assert chk["clearance_warning"]["component_clearance_is_not_verified"]
+          print("V5 compact bare-PCB shelf checks passed; populated fit NOT verified.")
+          PY
+      - name: Commit generated CAD models and images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f enclosure/V5/*.stl enclosure/V5/*.step             enclosure/V5/*.png enclosure/V5/verification.json             enclosure/V5/fit_check.json
+          if git diff --cached --quiet; then
+            echo "No regenerated CAD changes"
+          else
+            git commit -m "Export compact V5 PCB rack STEP STL and exploded drawings"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
