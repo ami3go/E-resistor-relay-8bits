@@ -1,0 +1,32 @@
+{
+  "STL_watertight": true,
+  "STL_connected_parts": 1,
+  "BRep_valid": true,
+  "BRep_solids": 1,
+  "footprint_mm": [
+    174.0,
+    82.0
+  ],
+  "max_height_mm": 78.0,
+  "build_volume_mm": [
+    174.0,
+    82.0,
+    78.0
+  ],
+  "bottom_board_verified_mm": [
+    145.0,
+    55.0
+  ],
+  "lower_board_bottom_z_mm": 8.0,
+  "relay_board_bottom_nominal_z_mm": 32.0,
+  "lower_clearance_nominal_mm": 8.4,
+  "next_module_pitch_mm": 74.0,
+  "relay_headroom_nominal_mm": 13.399999999999999,
+  "upper_pcb_placeholder_mm": [
+    145.0,
+    56.0
+  ],
+  "required_printed_parts_per_level": 1,
+  "nominal_screws_per_level": 0,
+  "volume_mm3": 55394.2
+}
