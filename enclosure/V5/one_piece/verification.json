@@ -1,0 +1,32 @@
+{
+  "valid_brep": true,
+  "solid_count": 1,
+  "stl_watertight": true,
+  "stl_connected_count": 1,
+  "production_stl_count": 1,
+  "print_quantity": 1,
+  "board_counts": {
+    "resistor": 5,
+    "relay": 5
+  },
+  "print_envelope_mm": [
+    174.0,
+    84.0,
+    138.0
+  ],
+  "bottom_board_z_mm": 8.0,
+  "first_relay_board_z_mm": 14.6,
+  "pair_pitch_mm": 28.2,
+  "resistor_to_relay_substrate_gap_mm": 5.0,
+  "relay_to_next_resistor_substrate_gap_mm": 20.0,
+  "last_relay_bottom_mm": 127.39999999999999,
+  "last_relay_top_mm": 129.0,
+  "model_volume_mm3": 170870.1,
+  "upper_relay_board_outline_verified": false,
+  "populated_resistor_components_assumed_mm_NOT_ACCOUNTED_FOR": 14.0,
+  "populated_relay_components_assumed_mm_NOT_ACCOUNTED_FOR": 27.0,
+  "potential_resistor_overlap_mm": 9.0,
+  "potential_relay_overlap_mm": 7.0,
+  "qualified_to_print": "prototype-only: component clearance, wiring and practical fit not checked",
+  "rails": "four vertical guide spines with shallow rails at ten board levels"
+}
