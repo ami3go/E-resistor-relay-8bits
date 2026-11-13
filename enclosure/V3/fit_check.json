@@ -1,0 +1,16 @@
+{
+  "zero_nominal_solid_interference_mm3": {
+    "lower_pcb_vs_resistor_frame": 0.0,
+    "relay_pcb_vs_relay_frame": 0.0,
+    "lower_frame_vs_upper_frame": 0.0,
+    "upper_frame_vs_next_lower": 0.0
+  },
+  "mounting_interface": {
+    "shaft_to_bore_diametral_clearance_mm": 0.55,
+    "head_snap_radial_deflection_each_mm": 0.3,
+    "head_to_relief_diametral_clearance_mm": 0.65,
+    "lower_to_upper_pitch_mm": 28.0,
+    "upper_to_next_lower_pitch_mm": 43.0
+  },
+  "scope": "Nominal BRep mechanical proxies only; no populated relay PCB dimensions or physical snap force tests."
+}

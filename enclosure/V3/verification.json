@@ -1,0 +1,34 @@
+{
+  "resistor_frame": {
+    "solid_valid": true,
+    "solids": 1,
+    "watertight": true,
+    "meshes": 1,
+    "volume_mm3": 28934.82,
+    "max_height_mm": 33.1
+  },
+  "relay_frame": {
+    "solid_valid": true,
+    "solids": 1,
+    "watertight": true,
+    "meshes": 1,
+    "volume_mm3": 34723.92,
+    "max_height_mm": 48.1
+  },
+  "printed_parts_per_module": 2,
+  "required_screws_per_module": 0,
+  "footprint_mm": [
+    174.0,
+    82.0
+  ],
+  "frame_pitch_mm": {
+    "resistor": 28.0,
+    "relay": 43.0
+  },
+  "complete_module_pitch_mm": 71.0,
+  "nominal_resistor_to_relay_gap_mm": 8.0,
+  "nominal_headroom_to_next_module_mm": 10.799999999999997,
+  "upper_PCB_dimensions_unverified": true,
+  "stack_joint": "four integrated split snap pegs to four shoulder sockets; nominal geometry only",
+  "needs_physical_test": true
+}
