@@ -44,14 +44,15 @@ Adjust `LOWER_POST_H` in `create_step.py` or `lower_post_h` in `e_resistor_stack
 
 ## Assembly illustration
 
-- [Exploded assembly drawing (SVG)](exploded_view.svg) — self-contained scalable technical view, with illustrative relay board.
-- The original high-resolution rendered picture supplied in the ChatGPT conversation is not included in the repository; the SVG is the repository-native assembly drawing.
+- [Exploded assembly drawing (PNG)](exploded_view.png) — raster version produced from the repository-native vector schematic.
+- [Exploded assembly drawing (SVG)](exploded_view.svg) — self-contained scalable technical diagram, with illustrative relay board.
+- The separate high-resolution conceptual rendering from the chat is not identical to these version-controlled schematic exports.
 
 ## File contents
 
 - [`create_step.py`](create_step.py) — CadQuery/OpenCascade parametric geometry source; generates five printable STEP/STL parts and positioned STEP assemblies.
 - [`e_resistor_stack.scad`](e_resistor_stack.scad) — OpenSCAD source with individual printable parts, assembled, exploded and two-module stacked preview modes.
-- Generated outputs (regenerate from `create_step.py`): `base.stl`, `tray.stl`, `arm.stl`, `lower_post.stl`, `stack_post.stl`, corresponding `.step` files, `frame_assembly.step`, and `frame_with_reference_pcbs.step`.
+- Versioned generated outputs (regenerate from `create_step.py`): `base.stl`, `tray.stl`, `arm.stl`, `lower_post.stl`, `stack_post.stl`, corresponding `.step` files, `frame_assembly.step`, and `frame_with_reference_pcbs.step`.
 - A single module uses **1 base, 1 tray, 4 adapter arms, 4 lower posts, and up to 4 stacking posts**.
 
 ### Generate CAD files
