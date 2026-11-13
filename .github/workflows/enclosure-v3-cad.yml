@@ -1,0 +1,84 @@
+name: Build E-resistor enclosure V3 CAD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "enclosure/V3/create_v3.py"
+      - "enclosure/V3/test_fit.py"
+      - "enclosure/V3/render_v3.py"
+      - ".github/workflows/enclosure-v3-cad.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-validate-render:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install CAD and rendering dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-dejavu-core
+          python -m pip install --upgrade pip
+          python -m pip install cadquery trimesh numpy pillow
+
+      - name: Generate two frame STEP/STL files and assembly STEP models
+        run: python enclosure/V3/create_v3.py
+
+      - name: Test nominal PCB and intermodule interference both directions
+        run: python enclosure/V3/test_fit.py
+
+      - name: Render CAD-accurate reference views
+        run: python enclosure/V3/render_v3.py
+
+      - name: Assert complete deliverables
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path("enclosure/V3")
+          outputs=(
+            "resistor_frame.stl","resistor_frame.step",
+            "relay_frame.stl","relay_frame.step",
+            "module_assembly.step","two_modules.step","exploded_assembly.step",
+            "exploded_v3.png","assembled_v3.png","stacked_v3.png",
+            "verification.json","fit_check.json",
+          )
+          for name in outputs:
+              p=root/name
+              assert p.is_file() and p.stat().st_size>100, f"Missing CAD artifact: {p}"
+          report=json.loads((root/"verification.json").read_text())
+          fit=json.loads((root/"fit_check.json").read_text())
+          assert report["printed_parts_per_module"] == 2
+          assert report["required_screws_per_module"] == 0
+          assert 5<=report["nominal_resistor_to_relay_gap_mm"]<=10
+          assert all(abs(value)<.0001 for value in fit["zero_nominal_solid_interference_mm3"].values())
+          for part in ("resistor_frame","relay_frame"):
+              d=report[part]
+              assert d["solid_valid"] and d["solids"]==1 and d["watertight"] and d["meshes"]==1
+          print("All V3 CAD exports, mesh and fit checks passed.")
+          PY
+
+      - name: Commit binary exports and rendered views to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f enclosure/V3/*.stl enclosure/V3/*.step \
+            enclosure/V3/*.png enclosure/V3/verification.json \
+            enclosure/V3/fit_check.json
+          if git diff --cached --quiet; then
+            echo "V3 CAD exports unchanged"
+          else
+            git commit -m "Generate verified enclosure V3 STEP STL and exploded views"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
