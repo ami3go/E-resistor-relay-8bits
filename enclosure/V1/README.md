@@ -42,6 +42,11 @@ The requested **5–10 mm gap means clear space above the tallest fitted resisto
 
 Adjust `LOWER_POST_H` in `create_step.py` or `lower_post_h` in `e_resistor_stack.scad` after measuring the assembled resistor board. Upper module-to-module headroom must also be checked against the real relay, RJ45 and wiring heights.
 
+## Assembly illustration
+
+- [Exploded assembly drawing (SVG)](exploded_view.svg) — self-contained scalable technical view, with illustrative relay board.
+- The original high-resolution rendered picture supplied in the ChatGPT conversation is not included in the repository; the SVG is the repository-native assembly drawing.
+
 ## File contents
 
 - [`create_step.py`](create_step.py) — CadQuery/OpenCascade parametric geometry source; generates five printable STEP/STL parts and positioned STEP assemblies.
