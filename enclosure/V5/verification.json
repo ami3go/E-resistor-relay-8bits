@@ -1,0 +1,29 @@
+{
+  "STL_watertight": true,
+  "STL_connected_parts": 1,
+  "BRep_valid": true,
+  "BRep_solids": 1,
+  "distinct_printed_models": 1,
+  "print_quantity": 5,
+  "resistor_board_quantity": 5,
+  "relay_board_quantity": 5,
+  "per_unit_footprint_mm": [
+    174.0,
+    84.0
+  ],
+  "per_unit_print_height_mm": 33.3,
+  "assembled_five_unit_height_mm": 146.1,
+  "resistor_pcb_under_z_mm": 8.0,
+  "relay_pcb_under_z_mm": 14.6,
+  "air_gap_R_PCB_top_to_U_PCB_bottom_mm": 5.0,
+  "air_gap_U_PCB_top_to_next_R_PCB_bottom_mm": 20.0,
+  "assumed_resistor_component_height_mm_NOT_USED_IN_SPACING": 14.0,
+  "assumed_relay_component_height_mm_NOT_USED_IN_SPACING": 27.0,
+  "provisional_resistor_components_intrude_gap_by_mm": 9.0,
+  "provisional_relay_components_intrude_gap_by_mm": 7.0,
+  "mechanical_fit_of_populated_boards": "NOT VERIFIED: likely clearance clash at both shelf intervals",
+  "relay_pcb_footprint_unverified": true,
+  "board_rails": "four short edge guide pockets each PCB, slide toward +Y",
+  "stack_lock": "4 split snap pegs into relief-bore sockets per interface",
+  "volume_mm3": 33346.6
+}
