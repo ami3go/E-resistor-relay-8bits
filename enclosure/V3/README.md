@@ -1,101 +1,96 @@
-# Enclosure V3 — two printed, screwless and stackable frames
+# Enclosure V3 UNIVERSAL — one printed frame variant
 
-**Status: CAD-qualified prototype; mechanical fit and strength NOT verified on physical hardware.**
+**Status: CAD-validated prototype only; relay PCB mechanical dimensions, snap forces, clip durability and physical fit are NOT verified.**
 
-V3 replaces the large monolithic V2 enclosure with **exactly two 3D-printed parts per module**:
+V3 now uses **one universal PCB frame** for the bottom resistor board and the upper 8-relay board. Print **two identical copies of `universal_frame.stl` per complete electrical module**, not two separate lower/upper frame types. Both use the same **board-edge support and flex clips**; the lower resistor board's mounting-hole spacing is no longer part of the mechanical interface. No separate spacer, screw or locking accessory is required in the nominal assembly.
 
-1. **resistor_frame.stl** — lower 28-mm-pitch open frame with four integrated split pins that engage the *verified* resistor PCB holes.
-2. **relay_frame.stl** — upper 43-mm-pitch open frame with four integrated relay PCB edge clips and mounting seats.
+![Exploded: two copies of the same universal frame](exploded_v3.png)
+![One complete assembled electrical module](assembled_v3.png)
+![Two complete electrical modules stacked using four identical frames](stacked_v3.png)
 
-**Every frame is independently stackable using the SAME corner joint:** four slotted/tapered male snap heads on the top of its posts and four female shoulder sockets on its underside. The relay frame snaps onto the resistor frame; the next resistor frame snaps onto the relay frame. No separate posts, screw bosses, latching clips or routine fasteners. Side ports allow tool-assisted unlocking for service.
+## Which dimensions are verified?
 
-![Exploded V3 mechanical assembly](exploded_v3.png)
-![Assembled V3 module](assembled_v3.png)
-![Two V3 modules stacked](stacked_v3.png)
+The real resistor PCB, read from [Resistors-board.kicad_pcb](../../Resistors-board/Resistors-board.kicad_pcb), is **145 × 55 × 1.6 mm**; it also has four Ø3.2-mm holes at a 138 × 48 mm pitch. The updated universal carrier **does not rely on any hole position**.
 
-## Verified geometry and assumptions
+The actual **YHQ001 8-relay PCB outline is NOT dimensioned in this repository**. Its modelled **145 × 56 × 1.6 mm outline is only a fit placeholder**. The printed spring clips are provisionally dimensioned to fit the nominal 145-mm PCB length of both board models. This is *universal between these two nominal board envelopes*, **not a fixture for arbitrary PCB sizes**. Verify the relay board's actual dimensions and accessible end edges before printing.
 
-The lower resistor PCB's [actual KiCad layout](../../Resistors-board/Resistors-board.kicad_pcb) is **145 × 55 × 1.6 mm**, with **four Ø3.2-mm holes on a 138 × 48 mm pitch** (3.5 mm from each corner).
+| Feature | V3 universal target |
+| --- | --- |
+| Number of distinct production STLs | **1** — `universal_frame.stl` |
+| Quantity per complete 2-PCB assembly | **2 identical frames** |
+| Additional spacer/clip/screw items | **0** nominally |
+| Common frame footprint | 174 × 82 mm |
+| Maximum part height | 47 mm |
+| Lower PCB-to-upper PCB *support-plane* pitch | **23.6 mm** |
+| Upper PCB-to-next module support-plane pitch | **40.0 mm** |
+| Repeated complete-module pitch | **63.6 mm** |
+| Assumed resistor component maximum height | 14 mm above the resistor PCB |
+| Nominal free gap above lower components | **8.0 mm** (14-mm assumption) |
+| Assumed relay component maximum height | 27 mm above the relay PCB |
+| Nominal free gap above relay components | **11.4 mm** (27-mm assumption) |
+| PCB retention | Four integral end-edge clips and underside seats |
+| Interframe retention | Four integrated snap wedges, two selectable heights |
 
-**NOT verified:** actual YHQ001 / CH9120 eight-channel Ethernet relay PCB dimensions, terminal positions, loaded component heights and cable access. The modeled upper PCB **145 × 56 mm** and all component shapes in visualizations are illustrative mechanical placeholders. Do not force the relay board into the prototype's edge clips until its real footprint is measured.
+### How one printed part supports two different stack pitches
 
-| Parameter | V3 nominal |
-|---|---:|
-| Printed parts per complete module | **2** |
-| Routine screws / insert nuts | **0** |
-| Frame footprint | **174 × 82 mm** |
-| Lower frame height to mounting plane | **28 mm** |
-| Upper frame height to next module | **43 mm** |
-| Full module stacking pitch | **71 mm** |
-| Shorter printed part max height (including male peg) | **33.1 mm** |
-| Taller printed part max height (including male peg) | **48.1 mm** |
-| Lower PCB underside | Z = 8.0 mm |
-| Upper relay PCB underside | Z = 31.6 mm |
-| Nominal free clearance over 14-mm-tall lower components | **8.0 mm** |
-| Nominal headroom over 27-mm-tall upper components | **10.8 mm** |
-| Locked joints between any two frames | Four integrated snap connections |
+**Orientation matters.** For every complete electrical module:
 
-The requested 5–10 mm is the **free vertical gap over the highest lower-board component**, not PCB-to-PCB spacing. Recalculate when measuring the populated PCBs:
+1. Start with **universal frame A** at **0°** orientation; insert the **resistor PCB** onto its four generic support seats and under the spring clips.
+2. Fit **universal frame B** — exactly the same printed part — **rotated 180° around the vertical axis**. Its four receiver channels slide around the complementary half-width pillars of frame A. Press down until the four **SHORT** catches engage at **23.6 mm**.
+3. Insert the **relay PCB** in frame B's generic edge clips. Confirm that real relay components, RJ45 and terminals do not interfere with the support or lower board.
+4. Start the next electrical module by setting its **resistor frame C**, rotated back to **0°**, on the **TALL** catches of frame B at **40.0 mm**.
+5. Continue 0°/180°/0°/180° with alternating SHORT (resistor → relay) and TALL (relay → next resistor) connections. **Never force the joint** if the latch engagement feels wrong.
 
-- Free resistor–relay clearance = \`31.6 − (8.0 + 1.6 + actual_lower_component_height)\`
-- Free relay-to-next-module clearance = \`43.0 − (3.6 + 1.6 + actual_upper_component_height)\`
+Each corner has one slender half-post, a complementary clearance slot, and two positive tapered shoulders located to engage at the required levels. It is a *geometric snap lock* with nominal **0.65 mm catch engagement**, not a verified structural fastening. The higher catch must be pushed past before the short catch can be reached; the column is intended to flex. Actual insertion/extraction force, cyclic flexural strength and resistance to vibration must be tested on printed PETG parts. The original V3 double-frame variants are superseded; only `universal_frame.stl` is the current production frame.
 
-Adjust \`LOWER_PITCH\`, \`UPPER_PITCH\`, \`RES_SUPPORT_Z\`, \`RELAY_SUPPORT_Z\`, \`U_X\`, and \`U_Y\` in \`create_v3.py\` as needed; the mating stack joint stays identical.
+### Clearance calculations
 
-## Snap locking system
+Both boards sit with their undersides **7.0 mm** above their corresponding frame datum and have nominal thickness **1.6 mm**. Thus:
 
-All frame corners have an integral Ø12-mm post and:
+```
+resistor-top-to-relay-underside clearance = 23.6 - 1.6 - actual resistor component height
+relay-top-to-next-resistor-underside = 40.0 - 1.6 - actual relay component height
+```
 
-- Male Ø4.20-mm shaft and tapered head, Ø5.35-mm maximum.
-- Ø0.85-mm split slot, allowing two flexible halves of the peg.
-- Female Ø4.75-mm entry and Ø6.00-mm enlarged counterbore.
-- Approximate 0.30-mm required radial compression per snap finger during insertion; a *nominal geometry value*, not measured force.
-- Opposing **Ø2.4-mm horizontal service ports** at each socket to compress the snap fingers with narrow tweezers for disassembly.
+The 5–10 mm requested lower component gap is met by the **8 mm nominal assumption** *only if* the lower populated board has a tallest component of 14 mm. The relay-to-next-module gap is **11.4 mm nominal** if relay components are no taller than 27 mm. Both figures must be recomputed from measurements.
 
-This provides a *positive geometrical latch*, unlike V2's unlatched locating pins. **Latch strength, assembly force, tolerance stack-up, repeated-cycle fatigue and vibration capacity are not physically qualified.** For transporting or suspending a stack, provide additional external restraint until tested.
+## FDM printing and snap durability
 
-## FDM printing and assembly
+- Print the **single model** twice per assembly, flat open frame down on the bed, interleaving posts upright. It fits a nominal 220 × 220 mm print area.
+- Begin with **PETG**, 0.4-mm nozzle, 0.2-mm layers, 4–5 perimeters, 30–40% infill. Apply 5–8-mm brim if the slender posts show instability.
+- No long horizontal roofs are built in; no supports expected for the main geometry, but **inspect edge-clip lips and 2-level latch ramps carefully in the slicer**. Small overhangs are deliberately retained.
+- Test both spring clip types using a **PCB-sized coupon** or scrap circuit board before pushing the real electronics into the mounts. Very small dimensional variation can change flex force or break clips. Clean any strings from the receiver slots.
+- Before relying on stack retention, perform pull-out, lateral load, thermal cycling and repeated disassembly checks. External restraint remains recommended for vertical hanging or mobile installations.
+- Maintain safe electrical creepage/clearance, wiring strain relief and airflow; the printed open-frame system is not a safety-rated enclosure.
 
-Use **PETG** for initial trials, 0.4-mm nozzle, 0.2-mm layer height, 4–5 perimeters, 30–40% infill. Both bases print flat with the columns upright. A 220 × 220 mm bed easily accommodates one frame plus a brim. A 5–8-mm brim can reduce lifting and tall-column sway. The design avoids long unsupported roof spans; inspect small clip overhangs and Ø2.4-mm release holes in the slicer before printing.
+## CAD and qualification files
 
-1. Print one lower and one upper frame per complete module, then clear the snap slots.
-2. Seat resistor PCB using its four verified Ø3.2 mounting holes; push only near the holes.
-3. Pre-wire the lower PCB screw terminals while access is open.
-4. Confirm upper relay board envelope and connector orientation; gently seat in edge retainers.
-5. Lower the relay frame straight onto the resistor frame. Apply pressure **to the four frame corners**, not onto the PCB, until all four latches engage.
-6. Attach the next module's resistor frame to the upper relay frame using the same joint and repeat.
-7. For disassembly, use appropriate narrow tools through the snap release ports and compress the fingers while lifting evenly.
+- [`universal_frame.stl`](universal_frame.stl) — **the only printable production frame variant**; print two copies per complete module.
+- [`universal_frame.step`](universal_frame.step) — individual STEP solid, editable in FreeCAD via further geometry operations.
+- [`create_v3.py`](create_v3.py) — source for the single-part frame, supports, latches and assembly construction.
+- [`module_assembly.step`](module_assembly.step), [`two_modules.step`](two_modules.step), [`exploded_assembly.step`](exploded_assembly.step) — STEP assemblies containing copies of the *same* frame geometry, reference PCBs and placements.
+- [`test_fit.py`](test_fit.py), [`fit_check.json`](fit_check.json) — nominal 4-frame 0°/180° interframe and PCB collision checks (static non-interference only; not latch-insertion simulation).
+- [`verification.json`](verification.json) — BRep validity, watertight STL and nominal gaps.
+- [`render_v3.py`](render_v3.py), [`exploded_v3.png`](exploded_v3.png), [`assembled_v3.png`](assembled_v3.png), [`stacked_v3.png`](stacked_v3.png) — CAD-based visualization; components are *illustrative* placeholders.
 
-Maintain required electrical insulation distances and airflow for the working circuit. Printed PETG does not make exposed live electronics a certified electrical enclosure.
+Generate and test with:
 
-## Models, drawings and tests
-
-- [Editable CadQuery source](create_v3.py) — generates the complete CAD solids.
-- [Lower resistor frame STL](resistor_frame.stl) / [STEP](resistor_frame.step).
-- [Upper relay frame STL](relay_frame.stl) / [STEP](relay_frame.step).
-- [Complete module STEP](module_assembly.step), [two stacked modules STEP](two_modules.step) and [exploded STEP](exploded_assembly.step).
-- [Exploded view](exploded_v3.png), [assembled view](assembled_v3.png), [two-module view](stacked_v3.png).
-- [CAD render source](render_v3.py), [nominal fit tests](test_fit.py).
-- [Solid and mesh verification](verification.json), [collision verification](fit_check.json).
-
-Generate or regenerate locally:
-
-\`\`\`bash
+```bash
 python -m pip install cadquery trimesh numpy pillow
 python enclosure/V3/create_v3.py
 python enclosure/V3/test_fit.py
 python enclosure/V3/render_v3.py
-\`\`\`
+```
 
-## Qualification
+### Physical qualification remains open
 
-- [x] Actual resistor PCB outline and mounting pitch used.
-- [x] Two STEP/STL printed solids generated from editable source.
-- [x] BRep validity, one-solid-per-part, and watertight STL mesh checks.
-- [x] Nominal PCB and interframe CAD collisions checked in both stack directions.
-- [x] V3 assembled, exploded, and stacked CAD renderings.
-- [ ] Measure YHQ001 board outline, populated component heights, and cable clearance.
-- [ ] Print and physically test split-snap and release-hole geometry, including retention forces and fatigue.
-- [ ] Confirm terminal access, mechanical stability and safe maximum stack height.
+- [x] Actual resistor PCB length, width, thickness verified in KiCad.
+- [x] **One universal mechanical frame variant** serves both reference board envelopes.
+- [x] Four-frame stack **nominal** BRep collision checks pass at short and tall offsets.
+- [x] STEP, one STL, assembled/exploded/multimodule renders export reproducibly.
+- [ ] Measure the populated actual relay PCB outline and end-edge accessibility.
+- [ ] Measure highest resistor, relay, terminal and connector components and their XY outlines.
+- [ ] Print test part; verify spring capture, tool release and four-latch engagement at both heights.
+- [ ] Test lock pull strength, repeated assembly cycles and allowable electrical module stack height.
 
-**Do not treat CAD-only validation as a verified physical fit or structural load rating.**
+**CAD passing does not imply physical qualification.**
