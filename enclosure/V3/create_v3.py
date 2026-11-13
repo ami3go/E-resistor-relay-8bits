@@ -96,6 +96,10 @@ def make_frame(kind: str):
             x,y=sx*P_X,sy*P_Y
             s=s.cut(cyl(x,y,-.1,DOCK_BORE_D,FRAME_T+.2))
             s=s.cut(cyl(x,y,DOCK_COUNTERBORE_Z,DOCK_RELIEF_D,FRAME_T-DOCK_COUNTERBORE_Z+.2))
+            # Opposing Ø2.4mm horizontal service ports let a narrow tweezer/tool
+            # compress the two snap fingers for disassembly. Printability: short
+            # (<12mm) Ø2.4 holes, no unsupported flat ceilings.
+            s=s.cut(cq.Solid.makeCylinder(1.20,13.0,cq.Vector(x-6.5,y,3.92),cq.Vector(1,0,0)))
     # Anti-splay side tie slots, available without extra printed parts.
     for x in (-42.,42.):
         for y in (-37.8,37.8): s=s.cut(box(x,y,-.1,12.0,2.6,FRAME_T+.2))
