@@ -1,0 +1,8 @@
+{
+  "nominal_intersection_volume_mm3": {
+    "resistor_pcb": 0.0,
+    "relay_pcb_nominal": 0.0,
+    "next_chassis": 0.0
+  },
+  "note": "proxies only, not actual populated boards"
+}
