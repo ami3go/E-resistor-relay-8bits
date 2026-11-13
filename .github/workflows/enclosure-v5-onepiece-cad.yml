@@ -1,0 +1,76 @@
+name: Build V5 one-piece ten-PCB rack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "enclosure/V5/one_piece/create_onepiece.py"
+      - "enclosure/V5/one_piece/test_fit.py"
+      - "enclosure/V5/one_piece/render_onepiece.py"
+      - ".github/workflows/enclosure-v5-onepiece-cad.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install CAD and renderer dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-dejavu-core
+          python -m pip install --upgrade pip
+          python -m pip install cadquery trimesh numpy pillow
+      - name: Export one-piece STL, STEP and ten-PCB reference assemblies
+        run: python enclosure/V5/one_piece/create_onepiece.py
+      - name: Check 5/20 mm gaps, bare-PCB collisions and slide-in paths
+        run: python enclosure/V5/one_piece/test_fit.py
+      - name: Render frame, inserted and exploded views
+        run: python enclosure/V5/one_piece/render_onepiece.py
+      - name: Verify and preserve CAD outputs
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("enclosure/V5/one_piece")
+          for n in ("onepiece_frame.stl","onepiece_frame.step",
+                    "ten_pcbs_assembly.step","ten_pcbs_exploded.step",
+                    "frame.png","assembled.png","exploded.png",
+                    "verification.json","fit_check.json"):
+              f=p/n
+              assert f.is_file() and f.stat().st_size > 100, n
+          info=json.loads((p/"verification.json").read_text())
+          fit=json.loads((p/"fit_check.json").read_text())
+          assert info["valid_brep"] and info["solid_count"]==1
+          assert info["stl_watertight"] and info["stl_connected_count"]==1
+          assert info["production_stl_count"]==1 and info["print_quantity"]==1
+          assert info["board_counts"]=={"resistor":5,"relay":5}
+          assert info["print_envelope_mm"]==[174.0,84.0,138.0]
+          assert fit["face_to_face_gaps_mm"]=={
+              "resistor_to_relay":5.0,"relay_to_next_resistor":20.0}
+          assert fit["max_board_sliding_path_intersection_mm3"] < 0.0001
+          assert all(x < 0.0001 for x in fit["frame_vs_bare_pcb_intersection_mm3"].values())
+          assert not fit["physical_populated_component_fit_verified"]
+          print("ONE-PIECE: all CAD nominal checks passed (populated fit NOT verified).")
+          PY
+      - name: Commit generated binary CAD and images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f enclosure/V5/one_piece/*.stl             enclosure/V5/one_piece/*.step             enclosure/V5/one_piece/*.png             enclosure/V5/one_piece/verification.json             enclosure/V5/one_piece/fit_check.json
+          if git diff --cached --quiet; then
+            echo "No CAD output changes"
+          else
+            git commit -m "Generate one-piece V5 rack CAD and exploded previews"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
