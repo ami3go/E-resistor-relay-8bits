@@ -1,0 +1,67 @@
+name: Build E-resistor enclosure V1 CAD
+on:
+  push:
+    branches: [main]
+    paths:
+      - "enclosure/V1/create_step.py"
+      - "enclosure/V1/e_resistor_stack.scad"
+      - "enclosure/V1/exploded_view.svg"
+      - ".github/workflows/enclosure-v1-cad.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install CadQuery and SVG renderer
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cadquery
+          sudo apt-get update -qq
+          sudo apt-get install -y librsvg2-bin
+
+      - name: Export STEP and STL parts
+        run: python enclosure/V1/create_step.py
+
+      - name: Render exploded-view PNG from vector drawing
+        run: |
+          rsvg-convert -w 1320 -h 980 enclosure/V1/exploded_view.svg > enclosure/V1/exploded_view.png
+
+      - name: Assert exported files exist
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root=Path("enclosure/V1")
+          for stem in ("base","tray","arm","lower_post","stack_post"):
+              for ext in ("step","stl"):
+                  path=root/f"{stem}.{ext}"
+                  assert path.is_file() and path.stat().st_size>1000, path
+          for file in ("frame_assembly.step","frame_with_reference_pcbs.step","exploded_view.png"):
+              path=root/file
+              assert path.is_file() and path.stat().st_size>1000, path
+          print("All V1 CAD exports and exploded PNG exist.")
+          PY
+
+      - name: Commit generated CAD and render to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add enclosure/V1/*.step enclosure/V1/*.stl enclosure/V1/exploded_view.png
+          if git diff --cached --quiet; then
+            echo "No generated CAD changes"
+          else
+            git commit -m "Generate enclosure V1 STL STEP and exploded PNG"
+            git push
+          fi
