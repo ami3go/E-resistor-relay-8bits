@@ -71,6 +71,7 @@ Locally regenerate with:
 \`\`\`bash
 python -m pip install cadquery trimesh numpy pillow
 python enclosure/V2/create_v2.py
+python enclosure/V2/test_fit.py
 python enclosure/V2/render_cpu.py
 \`\`\`
 
