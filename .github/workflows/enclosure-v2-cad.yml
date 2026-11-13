@@ -6,6 +6,7 @@ on:
     paths:
       - "enclosure/V2/create_v2.py"
       - "enclosure/V2/render_cpu.py"
+      - "enclosure/V2/test_fit.py"
       - ".github/workflows/enclosure-v2-cad.yml"
   workflow_dispatch:
 
@@ -31,6 +32,8 @@ jobs:
           python -m pip install cadquery trimesh numpy pillow
       - name: Export V2 BRep STEP and STL and verify manifold geometry
         run: python enclosure/V2/create_v2.py
+      - name: Check nominal PCB and intermodule collisions
+        run: python enclosure/V2/test_fit.py
       - name: Render CAD-based assembled exploded and stacked views
         run: python enclosure/V2/render_cpu.py
       - name: Check generated files
@@ -41,7 +44,7 @@ jobs:
           root = Path("enclosure/V2")
           for n in ("chassis_v2.stl","chassis_v2.step","module_reference.step",
                     "two_modules_reference.step","exploded_reference.step",
-                    "assembled_v2.png","exploded_v2.png","stacked_v2.png","verification.json"):
+                    "assembled_v2.png","exploded_v2.png","stacked_v2.png","verification.json","fit_check.json"):
               p=root/n
               assert p.is_file() and p.stat().st_size>100, f"Missing/empty: {p}"
           d=json.loads((root/"verification.json").read_text())
@@ -63,7 +66,8 @@ jobs:
             enclosure/V2/assembled_v2.png \
             enclosure/V2/exploded_v2.png \
             enclosure/V2/stacked_v2.png \
-            enclosure/V2/verification.json
+            enclosure/V2/verification.json \
+            enclosure/V2/fit_check.json
           if git diff --cached --quiet; then
             echo "CAD exports unchanged"
           else
