@@ -1,34 +1,23 @@
 {
-  "resistor_frame": {
-    "solid_valid": true,
-    "solids": 1,
-    "watertight": true,
-    "meshes": 1,
-    "volume_mm3": 28934.82,
-    "max_height_mm": 33.1
-  },
-  "relay_frame": {
-    "solid_valid": true,
-    "solids": 1,
-    "watertight": true,
-    "meshes": 1,
-    "volume_mm3": 34723.92,
-    "max_height_mm": 48.1
-  },
-  "printed_parts_per_module": 2,
-  "required_screws_per_module": 0,
+  "variant_count": 1,
+  "stl_watertight": true,
+  "stl_components": 1,
+  "brep_valid": true,
+  "brep_solids": 1,
+  "printed_parts_per_complete_electrical_module": 2,
+  "routine_screws": 0,
   "footprint_mm": [
     174.0,
     82.0
   ],
-  "frame_pitch_mm": {
-    "resistor": 28.0,
-    "relay": 43.0
-  },
-  "complete_module_pitch_mm": 71.0,
-  "nominal_resistor_to_relay_gap_mm": 8.0,
-  "nominal_headroom_to_next_module_mm": 10.799999999999997,
-  "upper_PCB_dimensions_unverified": true,
-  "stack_joint": "four integrated split snap pegs to four shoulder sockets; nominal geometry only",
-  "needs_physical_test": true
+  "printer_build_height_mm": 47.0,
+  "short_pitch_mm": 23.6,
+  "tall_pitch_mm": 40.0,
+  "resistor_to_relay_nominal_clearance_mm": 8.0,
+  "relay_to_next_nominal_clearance_mm": 11.399999999999999,
+  "mounting": "Four generic short-end clip mounts; no board mounting holes needed",
+  "stacking": "Alternate 0/180 degree orientation; short/tall clip-in pitches, shared frame only",
+  "physical_fit_qualified": false,
+  "relay_PCB_envelope_qualified": false,
+  "volume_mm3": 25795.0
 }
