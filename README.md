@@ -27,6 +27,52 @@ git submodule update --init --recursive
 
 See [control/README.md](control/README.md) for full relay-control usage instructions.
 
+### Provisioning a new board
+
+[scripts/provision_ch9120.py](scripts/provision_ch9120.py) automates the
+out-of-the-box procedure for a factory-default CH9120 board: it temporarily
+addresses the `192.168.1.0/24` factory subnet, reads and backs up the board
+configuration, sets the target IP / gateway / **TCP Server** port, verifies the
+result, and removes the temporary address again (also on errors).
+
+```bash
+python3 scripts/provision_ch9120.py --target-ip 192.168.0.212 --json          # dry run
+python3 scripts/provision_ch9120.py --target-ip 192.168.0.212 --json --yes    # apply
+```
+
+It needs root, passwordless `sudo`, or Docker (`--cap-add NET_ADMIN`) only for
+the temporary factory-subnet address; see [AGENTS.md](AGENTS.md) for the
+machine-readable contract, exit codes, and the safety rules agents must follow.
+
+### Calibrating and verifying the boards
+
+[scripts/calibrate_verify.py](scripts/calibrate_verify.py) measures each board's
+base resistance and eight cell values with an HP 34401A behind an eight-channel
+Phidget-controlled dry-contact isolation selector, verifies every logical code
+against the fitted model, and writes `calibration.json`, the raw measurements
+JSON, a CSV and a PDF report. It is offline-capable: `--simulate` runs the whole
+pipeline without hardware, and `replay` rebuilds calibration, CSV and PDF from
+a saved measurement file.
+
+```bash
+python3 scripts/calibrate_verify.py detect --yes --json   # map isolation channels to boards
+python3 scripts/calibrate_verify.py run --yes --json      # calibrate + verify + PDF
+./scripts/run_calibration_offline.sh                      # same live run, never downloads
+./scripts/run_calibration_max_accuracy_offline.sh         # overnight 200-NPLC profile
+python3 scripts/calibrate_verify.py replay calibration/measurements_*.json \
+    --calibration-file calibration.json                   # offline recompute
+```
+
+Run it from the `.venv-cal` virtualenv (phidget22, pyvisa, reportlab). The plan
+file, wiring assumptions and exit codes are documented in
+[AGENTS.md](AGENTS.md#calibration--verification-scriptscalibrate_verifypy).
+The maximum-accuracy profile keeps autozero enabled, uses 200 NPLC on every
+resistance range, waits one second after switching and takes five samples per
+point. Warm the HP 34401A for at least one hour first; a full five-board run can
+take roughly 10-15 hours. This remains a 2-wire measurement—to reach the DMM's best
+resistance specification, the fixture and isolation stage must support 4-wire
+Kelvin connections.
+
 ## Resistance driver
 
 [eresistor_relay8bits/](eresistor_relay8bits) is the Python driver for the board's resistance behavior, implementing [E_Resistor_8Relay_Driver_Spec.md](E_Resistor_8Relay_Driver_Spec.md). It is independent of the relay transport: the resistance model, code<->coil-mask inversion, and channel/bank logic don't know or care how a coil mask actually reaches a board.
@@ -118,6 +164,8 @@ bank.save_calibration("calibration.json")
 ```
 
 `calibration.json` is a plain JSON file (see [calibration.example.json](calibration.example.json)). The driver resolves each channel's calibration by its `(ip, channel_id)` identity.
+
+The bench boards are calibrated and verified end-to-end with [scripts/calibrate_verify.py](scripts/calibrate_verify.py), which writes this file, a full 0..255 verification table and a PDF report (see [Calibrating and verifying the boards](#calibrating-and-verifying-the-boards)).
 
 ### Tests
 
