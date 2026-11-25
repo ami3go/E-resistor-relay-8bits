@@ -167,6 +167,52 @@ bank.save_calibration("calibration.json")
 
 The bench boards are calibrated and verified end-to-end with [scripts/calibrate_verify.py](scripts/calibrate_verify.py), which writes this file, a full 0..255 verification table and a PDF report (see [Calibrating and verifying the boards](#calibrating-and-verifying-the-boards)).
 
+### Calibration GUI and HIL integration
+
+The existing `E-resistor-matrix-calibration-tool` can drive this board through
+`eresistor_relay8bits.calibration_adapter:create_switching_adapter`. The
+calibration model is series-binary with an always-present base resistor:
+
+```text
+Rout(code) = Rbase + sum(selected calibrated cell weights)
+```
+
+For Linux bench use, prepare both sibling repositories:
+
+```bash
+git submodule update --init --recursive
+bash hil/setup_linux.sh
+source .venv/bin/activate
+
+cp hil/bench.env.example hil/bench.env
+nano hil/bench.env
+```
+
+Then run the gated qualification flow:
+
+```bash
+bash hil/preflight.sh
+bash hil/run_full.sh
+```
+
+`hil/preflight.sh` checks the physical safe state, base, B0...B7, derived
+individual cell values, code `0xBD`, and final safe-state recovery.
+`hil/run_full.sh` re-runs preflight, performs the complete base + 8-cell
+calibration and all **190 application codes**, then runs the strict artifact
+release validator.
+
+See [HIL_TEST_PLAN.md](HIL_TEST_PLAN.md) for the complete procedure and
+[hil/HIL_RESULT_TEMPLATE.md](hil/HIL_RESULT_TEMPLATE.md) for the evidence
+record.
+
+The calibration tool exports `relay_driver_calibration.json`, which loads
+directly with:
+
+```python
+from eresistor_relay8bits import EResistorBank
+bank = EResistorBank.load_calibration("relay_driver_calibration.json")
+```
+
 ### Tests
 
 ```bash
