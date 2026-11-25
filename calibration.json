@@ -1,0 +1,327 @@
+{
+  "192.168.0.211": {
+    "0": {
+      "base_ohm": 301.33187,
+      "cell_ohm": [
+        2074.03423,
+        4243.83633,
+        8434.25313,
+        16887.96713,
+        33950.36313,
+        67914.03613,
+        135736.72813,
+        270087.90813
+      ],
+      "note": "measured 2026-11-23T19:57:35+02:00 via scripts/calibrate_verify.py (live)",
+      "verification": {
+        "points": 256,
+        "max_abs_error_percent": 0.007167213627954134,
+        "mean_abs_error_percent": 0.0012731842056332907,
+        "mean_error_percent": 0.0005042384758881404,
+        "max_abs_error_ohm": 7.658050000027288,
+        "worst_codes": [
+          {
+            "code": 15,
+            "error_percent": 0.007167213627954134
+          },
+          {
+            "code": 4,
+            "error_percent": -0.006719641558058612
+          },
+          {
+            "code": 13,
+            "error_percent": 0.006006443949241381
+          },
+          {
+            "code": 31,
+            "error_percent": 0.005967633068475587
+          },
+          {
+            "code": 63,
+            "error_percent": 0.005723256199486534
+          },
+          {
+            "code": 14,
+            "error_percent": 0.0055931907211898245
+          },
+          {
+            "code": 29,
+            "error_percent": 0.005345692804491623
+          },
+          {
+            "code": 30,
+            "error_percent": 0.004996117726763293
+          },
+          {
+            "code": 8,
+            "error_percent": -0.004915849098893016
+          },
+          {
+            "code": 62,
+            "error_percent": 0.00483731384072232
+          }
+        ]
+      }
+    }
+  },
+  "192.168.0.215": {
+    "0": {
+      "base_ohm": 301.34306,
+      "cell_ohm": [
+        2073.86434,
+        4242.01924,
+        8441.31494,
+        16887.22494,
+        33936.61694,
+        67968.15094,
+        135704.75694,
+        270026.25694
+      ],
+      "note": "measured 2026-11-23T19:57:35+02:00 via scripts/calibrate_verify.py (live)",
+      "verification": {
+        "points": 256,
+        "max_abs_error_percent": 0.04287025753494638,
+        "mean_abs_error_percent": 0.012256450806529026,
+        "mean_error_percent": -0.012256450806529026,
+        "max_abs_error_ohm": 58.20470000000205,
+        "worst_codes": [
+          {
+            "code": 4,
+            "error_percent": -0.04287025753494638
+          },
+          {
+            "code": 5,
+            "error_percent": -0.03372932524262447
+          },
+          {
+            "code": 8,
+            "error_percent": -0.031032253530363457
+          },
+          {
+            "code": 6,
+            "error_percent": -0.02868180649517288
+          },
+          {
+            "code": 9,
+            "error_percent": -0.025569668010047165
+          },
+          {
+            "code": 40,
+            "error_percent": -0.024741371276712477
+          },
+          {
+            "code": 10,
+            "error_percent": -0.02362156455773954
+          },
+          {
+            "code": 7,
+            "error_percent": -0.022628884622697593
+          },
+          {
+            "code": 12,
+            "error_percent": -0.022520352564664198
+          },
+          {
+            "code": 44,
+            "error_percent": -0.022130678542406683
+          }
+        ]
+      }
+    }
+  },
+  "192.168.0.212": {
+    "0": {
+      "base_ohm": 301.63289,
+      "cell_ohm": [
+        2072.96741,
+        4244.94841,
+        8426.74511,
+        16878.47111,
+        33912.61511,
+        67847.69411,
+        135943.81711,
+        270375.80711
+      ],
+      "note": "measured 2026-11-23T19:57:35+02:00 via scripts/calibrate_verify.py (live)",
+      "verification": {
+        "points": 256,
+        "max_abs_error_percent": 0.008260412186563962,
+        "mean_abs_error_percent": 0.001338506832396657,
+        "mean_error_percent": 0.0005937817856339145,
+        "max_abs_error_ohm": 12.55163000000175,
+        "worst_codes": [
+          {
+            "code": 4,
+            "error_percent": -0.008260412186563962
+          },
+          {
+            "code": 63,
+            "error_percent": 0.005225602068432704
+          },
+          {
+            "code": 5,
+            "error_percent": -0.0049846568141646164
+          },
+          {
+            "code": 16,
+            "error_percent": -0.004904389539702535
+          },
+          {
+            "code": 15,
+            "error_percent": 0.004845987130669122
+          },
+          {
+            "code": 31,
+            "error_percent": 0.004801163105348178
+          },
+          {
+            "code": 29,
+            "error_percent": 0.004684617774691362
+          },
+          {
+            "code": 61,
+            "error_percent": 0.00451502960661295
+          },
+          {
+            "code": 30,
+            "error_percent": 0.004460748374651639
+          },
+          {
+            "code": 62,
+            "error_percent": 0.004302993197396233
+          }
+        ]
+      }
+    }
+  },
+  "192.168.0.213": {
+    "0": {
+      "base_ohm": 301.33043,
+      "cell_ohm": [
+        2074.60467,
+        4237.51327,
+        8445.20957,
+        16876.80757,
+        33902.54957,
+        67866.99457,
+        135768.26957,
+        270617.09957
+      ],
+      "note": "measured 2026-11-23T19:57:35+02:00 via scripts/calibrate_verify.py (live)",
+      "verification": {
+        "points": 256,
+        "max_abs_error_percent": 0.008357590544393395,
+        "mean_abs_error_percent": 0.002032857670739537,
+        "mean_error_percent": -0.0019776695501583443,
+        "max_abs_error_ohm": 13.329139999987092,
+        "worst_codes": [
+          {
+            "code": 4,
+            "error_percent": -0.008357590544393395
+          },
+          {
+            "code": 8,
+            "error_percent": -0.006112420333328749
+          },
+          {
+            "code": 6,
+            "error_percent": -0.0050005186092532605
+          },
+          {
+            "code": 5,
+            "error_percent": -0.004977939177683408
+          },
+          {
+            "code": 16,
+            "error_percent": -0.004695373741224
+          },
+          {
+            "code": 10,
+            "error_percent": -0.00418044722855452
+          },
+          {
+            "code": 9,
+            "error_percent": -0.0038626704399817246
+          },
+          {
+            "code": 64,
+            "error_percent": -0.0037921769447426114
+          },
+          {
+            "code": 32,
+            "error_percent": -0.0037158020238810463
+          },
+          {
+            "code": 128,
+            "error_percent": -0.0035767223366835283
+          }
+        ]
+      }
+    }
+  },
+  "192.168.0.214": {
+    "0": {
+      "base_ohm": 301.59962,
+      "cell_ohm": [
+        2072.61728,
+        4243.84378,
+        8429.79438,
+        16870.08238,
+        33918.23938,
+        67827.96938,
+        135880.14038,
+        270134.23038
+      ],
+      "note": "measured 2026-11-23T19:57:35+02:00 via scripts/calibrate_verify.py (live)",
+      "verification": {
+        "points": 256,
+        "max_abs_error_percent": 0.010960449156232495,
+        "mean_abs_error_percent": 0.0011950321396473726,
+        "mean_error_percent": -0.0007872639462779948,
+        "max_abs_error_ohm": 7.642760000017006,
+        "worst_codes": [
+          {
+            "code": 4,
+            "error_percent": -0.010960449156232495
+          },
+          {
+            "code": 8,
+            "error_percent": -0.00791419268071921
+          },
+          {
+            "code": 5,
+            "error_percent": -0.006981481048592699
+          },
+          {
+            "code": 6,
+            "error_percent": -0.006418225346763704
+          },
+          {
+            "code": 9,
+            "error_percent": -0.005894109125486424
+          },
+          {
+            "code": 10,
+            "error_percent": -0.005709782764904206
+          },
+          {
+            "code": 16,
+            "error_percent": -0.005055546871518599
+          },
+          {
+            "code": 7,
+            "error_percent": -0.004379760420153555
+          },
+          {
+            "code": 11,
+            "error_percent": -0.00433435711542431
+          },
+          {
+            "code": 63,
+            "error_percent": 0.004229855320768171
+          }
+        ]
+      }
+    }
+  }
+}

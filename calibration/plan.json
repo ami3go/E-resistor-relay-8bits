@@ -1,0 +1,59 @@
+{
+  "schema": "eresistor-calibration-plan/v1",
+  "dmm": {
+    "resource": "USB0::1003::8293::HEWLETT-PACKARD_34401A_0_11-5-2::0::INSTR",
+    "nplc_low_ohm": 100,
+    "nplc_high_ohm": 10,
+    "nplc_threshold_ohm": 10000.0,
+    "settle_s": 0.35,
+    "calibration_samples": 3,
+    "verification_samples": 3,
+    "timeout_s": 10.0
+  },
+  "isolation": {
+    "active_high": true,
+    "open_timeout_ms": 5000,
+    "outputs_per_board": 8,
+    "boards": {
+      "192.168.0.211": {
+        "serial": 449901,
+        "output": 0
+      },
+      "192.168.0.212": {
+        "serial": 449901,
+        "output": 1
+      },
+      "192.168.0.213": {
+        "serial": 449901,
+        "output": 2
+      },
+      "192.168.0.214": {
+        "serial": 449901,
+        "output": 3
+      },
+      "192.168.0.215": {
+        "serial": 449901,
+        "output": 4
+      }
+    }
+  },
+  "boards": [
+    "192.168.0.211",
+    "192.168.0.212",
+    "192.168.0.213",
+    "192.168.0.214",
+    "192.168.0.215"
+  ],
+  "verification": {
+    "codes": "all",
+    "include_code_zero": true
+  },
+  "relay": {
+    "port": 8800,
+    "transport": "tcp",
+    "timeout_s": 3.0,
+    "command_gap_s": 0.05
+  },
+  "output_dir": "calibration",
+  "calibration_file": "calibration.json"
+}
