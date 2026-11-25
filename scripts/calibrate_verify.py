@@ -807,16 +807,66 @@ def merge_calibration_file(
     path.write_text(json.dumps(json_safe(data), indent=2) + "\n", encoding="utf-8")
 
 
+def _percentile(values: Sequence[float], fraction: float) -> float | None:
+    """Linear-interpolated percentile of an unsorted sequence (0..1 fraction)."""
+    if not values:
+        return None
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = (len(ordered) - 1) * fraction
+    lower = int(math.floor(position))
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = position - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * weight
+
+
 def verification_summary(points: Sequence[dict[str, Any]]) -> dict[str, Any]:
     percents = [abs(p["error_percent"]) for p in points if p["error_percent"] is not None]
     signed = [p["error_percent"] for p in points if p["error_percent"] is not None]
     ohms = [abs(p["error_ohm"]) for p in points]
+    mean_abs = (sum(percents) / len(percents)) if percents else None
+    mean_signed = (sum(signed) / len(signed)) if signed else None
+    std = (
+        math.sqrt(sum((value - mean_signed) ** 2 for value in signed) / len(signed))
+        if signed
+        else None
+    )
+    rms = math.sqrt(sum(value**2 for value in signed) / len(signed)) if signed else None
+
+    def within(tolerance: float) -> float | None:
+        if not percents:
+            return None
+        return sum(1 for value in percents if value <= tolerance) / len(percents)
+
     return {
         "points": len(points),
         "max_abs_error_percent": max(percents) if percents else None,
-        "mean_abs_error_percent": (sum(percents) / len(percents)) if percents else None,
-        "mean_error_percent": (sum(signed) / len(signed)) if signed else None,
+        "mean_abs_error_percent": mean_abs,
+        "median_abs_error_percent": _percentile(percents, 0.5),
+        "p95_abs_error_percent": _percentile(percents, 0.95),
+        "p99_abs_error_percent": _percentile(percents, 0.99),
+        "mean_error_percent": mean_signed,
+        "median_error_percent": _percentile(signed, 0.5),
+        "std_error_percent": std,
+        "rms_error_percent": rms,
+        "min_error_percent": min(signed) if signed else None,
+        "max_error_percent": max(signed) if signed else None,
+        "mean_abs_error_ohm": (sum(ohms) / len(ohms)) if ohms else None,
+        "median_abs_error_ohm": _percentile(ohms, 0.5),
+        "std_error_ohm": (
+            math.sqrt(
+                sum((p["error_ohm"] - sum(q["error_ohm"] for q in points) / len(points)) ** 2 for p in points)
+                / len(points)
+            )
+            if points
+            else None
+        ),
         "max_abs_error_ohm": max(ohms) if ohms else None,
+        "within_0_01_percent": within(0.01),
+        "within_0_02_percent": within(0.02),
+        "within_0_05_percent": within(0.05),
+        "within_0_1_percent": within(0.1),
         "worst_codes": sorted(
             ({"code": p["code"], "error_percent": p["error_percent"]} for p in points),
             key=lambda item: abs(item["error_percent"] or 0.0),
@@ -884,7 +934,7 @@ def build_pdf(path: Path, payload: dict[str, Any], plan: dict[str, Any]) -> None
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.lib.units import mm
         from reportlab.pdfbase.pdfmetrics import stringWidth
-        from reportlab.graphics.shapes import Circle, Drawing, Line, String
+        from reportlab.graphics.shapes import Circle, Drawing, Line, Rect, String
         from reportlab.platypus import (
             PageBreak,
             Paragraph,
@@ -972,7 +1022,9 @@ def build_pdf(path: Path, payload: dict[str, Any], plan: dict[str, Any]) -> None
 
     # summary table
     story.append(Paragraph("Verification summary", heading))
-    summary_rows = [["Board", "Points", "mean |err| %", "max |err| %", "max |err| ohm"]]
+    summary_rows = [
+        ["Board", "Points", "mean |err| %", "std %", "p95 %", "max |err| %", "max |err| ohm"]
+    ]
     for board in boards:
         summary = board.get("verification_summary") or {}
         summary_rows.append(
@@ -980,11 +1032,17 @@ def build_pdf(path: Path, payload: dict[str, Any], plan: dict[str, Any]) -> None
                 board.get("ip", ""),
                 str(summary.get("points", 0)),
                 f"{summary.get('mean_abs_error_percent', 0):.4f}",
+                f"{summary.get('std_error_percent', 0):.4f}",
+                f"{summary.get('p95_abs_error_percent', 0):.4f}",
                 f"{summary.get('max_abs_error_percent', 0):.4f}",
                 f"{summary.get('max_abs_error_ohm', 0):.1f}",
             ]
         )
-    table = Table(summary_rows, colWidths=[40 * mm, 20 * mm, 35 * mm, 35 * mm, 35 * mm], repeatRows=1)
+    table = Table(
+        summary_rows,
+        colWidths=[35 * mm, 16 * mm, 30 * mm, 24 * mm, 24 * mm, 30 * mm, 31 * mm],
+        repeatRows=1,
+    )
     table.setStyle(
         TableStyle(
             [
@@ -995,6 +1053,27 @@ def build_pdf(path: Path, payload: dict[str, Any], plan: dict[str, Any]) -> None
         )
     )
     story.append(table)
+
+    # pooled error distribution across every board
+    pooled = [point for board in boards for point in (board.get("verification") or [])]
+    if pooled:
+        story.append(Spacer(1, 6))
+        story.append(
+            renderPDF.GraphicsFlowable(
+                error_histogram(
+                    pooled,
+                    Drawing,
+                    Line,
+                    Rect,
+                    String,
+                    colors,
+                    title_suffix=f" - all boards (n={len(pooled)})",
+                    color="#5d6d7e",
+                    bins=25,
+                    tolerance_lines=(0.01, 0.05),
+                )
+            )
+        )
 
     for board in boards:
         story.append(PageBreak())
@@ -1098,6 +1177,66 @@ def build_pdf(path: Path, payload: dict[str, Any], plan: dict[str, Any]) -> None
                     )
                 )
             )
+            story.append(Spacer(1, 4))
+            story.append(
+                renderPDF.GraphicsFlowable(
+                    error_histogram(
+                        verification,
+                        Drawing,
+                        Line,
+                        Rect,
+                        String,
+                        colors,
+                        title=None,
+                        color="#c0392b",
+                        bins=21,
+                        tolerance_lines=(0.01, 0.05),
+                    )
+                )
+            )
+            story.append(Spacer(1, 4))
+            stats_rows = [["statistic", "value"], ["statistic", "value"]]
+            pairs = [
+                ("points", f"{summary.get('points', 0)}"),
+                ("mean error %", f"{summary.get('mean_error_percent', 0):+.5f}"),
+                ("median error %", f"{summary.get('median_error_percent', 0):+.5f}"),
+                ("std dev %", f"{summary.get('std_error_percent', 0):.5f}"),
+                ("RMS %", f"{summary.get('rms_error_percent', 0):.5f}"),
+                ("min error %", f"{summary.get('min_error_percent', 0):+.5f}"),
+                ("max error %", f"{summary.get('max_error_percent', 0):+.5f}"),
+                ("mean |err| %", f"{summary.get('mean_abs_error_percent', 0):.5f}"),
+                ("median |err| %", f"{summary.get('median_abs_error_percent', 0):.5f}"),
+                ("p95 |err| %", f"{summary.get('p95_abs_error_percent', 0):.5f}"),
+                ("p99 |err| %", f"{summary.get('p99_abs_error_percent', 0):.5f}"),
+                ("max |err| %", f"{summary.get('max_abs_error_percent', 0):.5f}"),
+                ("mean |err| ohm", f"{summary.get('mean_abs_error_ohm', 0):.3f}"),
+                ("max |err| ohm", f"{summary.get('max_abs_error_ohm', 0):.2f}"),
+                ("within +/-0.01 %", f"{100 * (summary.get('within_0_01_percent') or 0):.1f} %"),
+                ("within +/-0.02 %", f"{100 * (summary.get('within_0_02_percent') or 0):.1f} %"),
+                ("within +/-0.05 %", f"{100 * (summary.get('within_0_05_percent') or 0):.1f} %"),
+                ("within +/-0.1 %", f"{100 * (summary.get('within_0_1_percent') or 0):.1f} %"),
+            ]
+            stats_rows = [["statistic", "value", "statistic", "value"]]
+            half = (len(pairs) + 1) // 2
+            for index in range(half):
+                left = pairs[index]
+                right = pairs[index + half] if index + half < len(pairs) else ("", "")
+                stats_rows.append([left[0], left[1], right[0], right[1]])
+            table = Table(
+                stats_rows,
+                colWidths=[42 * mm, 32 * mm, 42 * mm, 32 * mm],
+                repeatRows=1,
+            )
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e8eef7")),
+                        ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+                    ]
+                )
+            )
+            story.append(table)
             story.append(Spacer(1, 4))
             worst = (summary.get("worst_codes") or [])[:5]
             if worst:
@@ -1752,6 +1891,111 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}))
         return 4
 
+
+
+
+def error_histogram(
+    verification: Sequence[dict[str, Any]],
+    Drawing,
+    Line,
+    Rect,
+    String,
+    Colors,
+    *,
+    error_field: str = "error_percent",
+    title: str | None = None,
+    title_suffix: str = "",
+    color: str = "#2471a3",
+    bins: int = 21,
+    tolerance_lines: Sequence[float] = (),
+    unit: str = "%",
+) -> Any:
+    """Histogram of signed errors, centred on zero, with optional tolerance markers."""
+    values = [float(p[error_field]) for p in verification if p.get(error_field) is not None]
+    width, height = 520, 150
+    margin_l, margin_r, margin_t, margin_b = 42, 10, 26, 30
+    drawing = Drawing(width, height)
+    if not values:
+        drawing.add(String(10, height / 2, "No verification points", fontSize=8))
+        return drawing
+
+    limit = max(abs(min(values)), abs(max(values))) or 1e-9
+    limit *= 1.05
+    counts = [0] * bins
+    span = 2 * limit
+    for value in values:
+        index = int((value + limit) / span * bins)
+        counts[min(max(index, 0), bins - 1)] += 1
+    peak = max(counts)
+    plot_w = width - margin_l - margin_r
+    plot_h = height - margin_t - margin_b
+    bar_w = plot_w / bins
+    drawn_tolerances = [value for value in tolerance_lines if value and abs(value) < limit]
+    if title is None:
+        title = f"Error distribution ({unit})" + title_suffix
+        if drawn_tolerances:
+            note = " and ".join(f"+/-{value:g} {unit}" for value in drawn_tolerances)
+            title += f", dashed lines at {note}"
+
+    drawing.add(String(margin_l, height - 10, title, fontName="Helvetica-Bold", fontSize=8))
+    drawing.add(
+        String(
+            6,
+            margin_b + plot_h / 2 - 12,
+            "count",
+            fontName="Helvetica",
+            fontSize=7,
+            angle=90,
+        )
+    )
+    drawing.add(
+        String(
+            width / 2 - 20, 4, f"error ({unit})", fontName="Helvetica", fontSize=7
+        )
+    )
+    for index, count in enumerate(counts):
+        bar_h = (count / peak) * plot_h if peak else 0
+        drawing.add(
+            Rect(
+                margin_l + index * bar_w + 0.5,
+                margin_b,
+                max(bar_w - 1.0, 0.5),
+                bar_h,
+                fillColor=Colors.HexColor(color),
+                strokeColor=None,
+            )
+        )
+    drawing.add(
+        Line(
+            margin_l,
+            margin_b,
+            margin_l + plot_w,
+            margin_b,
+            strokeWidth=0.5,
+            strokeColor="#888888",
+        )
+    )
+    for tolerance in tolerance_lines:
+        for sign in (-1.0, 1.0):
+            if abs(tolerance) >= limit:
+                continue
+            x = margin_l + (sign * tolerance + limit) / span * plot_w
+            drawing.add(
+                Line(
+                    x,
+                    margin_b,
+                    x,
+                    margin_b + plot_h,
+                    strokeWidth=0.6,
+                    strokeColor="#e67e22",
+                    strokeDashArray=[2, 2],
+                )
+            )
+    drawing.add(String(margin_l, margin_b - 10, f"{-limit:+.4f}", fontSize=6))
+    drawing.add(String(margin_l + plot_w / 2 - 6, margin_b - 10, "0", fontSize=6))
+    drawing.add(String(margin_l + plot_w - 26, margin_b - 10, f"{limit:+.4f}", fontSize=6))
+    drawing.add(String(margin_l + 2, margin_b + plot_h + 4, f"n={len(values)}, max count {peak}", fontSize=6))
+    return drawing
 
 if __name__ == "__main__":
     raise SystemExit(main())

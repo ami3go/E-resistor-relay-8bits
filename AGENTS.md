@@ -197,7 +197,10 @@ relative to its own path.
 Measures each board's base resistance and eight cell values with an HP 34401A
 (2-wire), verifies every logical code against the fitted model, and writes
 `calibration.json`, a measurements JSON (all raw samples), a CSV and a PDF
-report. The PDF/CSV/calibration can be rebuilt without any hardware.
+report. The PDF contains the per-board calibration tables, the 256-code
+verification appendix, error statistics (mean/median/std, RMS, p95/p99,
+tolerance coverage) and per-board plus pooled error histograms. The
+PDF/CSV/calibration can be rebuilt without any hardware.
 
 ## Commands
 

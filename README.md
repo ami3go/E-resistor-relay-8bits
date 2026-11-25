@@ -50,9 +50,11 @@ machine-readable contract, exit codes, and the safety rules agents must follow.
 base resistance and eight cell values with an HP 34401A behind an eight-channel
 Phidget-controlled dry-contact isolation selector, verifies every logical code
 against the fitted model, and writes `calibration.json`, the raw measurements
-JSON, a CSV and a PDF report. It is offline-capable: `--simulate` runs the whole
-pipeline without hardware, and `replay` rebuilds calibration, CSV and PDF from
-a saved measurement file.
+JSON, a CSV and a PDF report. The report includes per-board calibration tables,
+error statistics (mean/median/std, RMS, p95/p99, tolerance coverage) and error
+histograms, plus the full 0..255 verification appendix. It is offline-capable:
+`--simulate` runs the whole pipeline without hardware, and `replay` rebuilds
+calibration, CSV and PDF from a saved measurement file.
 
 ```bash
 python3 scripts/calibrate_verify.py detect --yes --json   # map isolation channels to boards
